@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: ideal-body-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free            # bump to starter if the instance runs out of memory (mediapipe + ML models)
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL     # Supabase *Session pooler* connection string (see README)
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: CORS_ORIGINS     # your Vercel URL, e.g. https://ideal-body.vercel.app
+        sync: false
+      - key: CORS_ORIGIN_REGEX  # optional: allow Vercel preview deploys
+        sync: false

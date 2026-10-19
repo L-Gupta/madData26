@@ -1,0 +1,8 @@
+.env
+.venv
+venv
+.vscode
+__pycache__
+*.pyc
+*.db
+app/ML/data

@@ -23,6 +23,10 @@ from app.core.config import settings
 # access to the values within the .ini file in use.
 config = context.config
 
+# Use the app's DATABASE_URL (SQLite locally, Supabase Postgres in prod) instead of alembic.ini.
+# `%` must be doubled because ConfigParser treats it as interpolation syntax.
+config.set_main_option("sqlalchemy.url", settings.database_url.replace("%", "%%"))
+
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
 if config.config_file_name is not None:

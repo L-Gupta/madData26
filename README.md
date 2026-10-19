@@ -238,6 +238,50 @@ Open `http://localhost:5173` in your browser.
 
 ---
 
+## ☁️ Deployment (Vercel + Render + Supabase)
+
+```
+Browser ──► Vercel (frontend/, static Vite build)
+              │  VITE_API_BASE_URL
+              ▼
+           Render (backend/, Docker, FastAPI) ──► Supabase Postgres
+```
+
+Deploy in this order, since each step produces a URL the next one needs.
+
+### 1. Supabase (database)
+1. Create a project and note the database password.
+2. **Connect → Session pooler** → copy the URI. Use the pooler string (`...pooler.supabase.com:5432`), not the "Direct connection": direct is IPv6-only and Render can't reach it.
+   It looks like `postgresql://postgres.<project-ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres`
+   (URL-encode special characters in the password).
+3. Nothing else to do: tables are created by Alembic when the backend boots, and the migrations enable Row Level Security so the public Supabase REST API can't read your tables.
+
+### 2. Render (backend)
+1. **New → Blueprint** → select this repo. Render reads [render.yaml](render.yaml) and builds [backend/Dockerfile](backend/Dockerfile).
+2. When prompted, set:
+   | Variable | Value |
+   |---|---|
+   | `DATABASE_URL` | the Supabase Session pooler URI from step 1 |
+   | `GEMINI_API_KEY` | your Gemini key |
+   | `CORS_ORIGINS` | your Vercel URL (`https://<app>.vercel.app`); you can fill it in after step 3 |
+   | `CORS_ORIGIN_REGEX` | optional, e.g. `https://<app>-.*\.vercel\.app` to allow Vercel preview deploys |
+
+   `JWT_SECRET` is generated automatically; `ENVIRONMENT=production` is preset.
+3. On every boot the container runs `alembic upgrade head` and then starts uvicorn. Health check: `GET /health`.
+4. Note the service URL (`https://<service>.onrender.com`).
+
+The free instance has 512 MB RAM and sleeps after 15 minutes idle (first request takes ~30–60 s to wake). If it gets OOM-killed during image analysis, change `plan: free` to `plan: starter` in `render.yaml`.
+
+### 3. Vercel (frontend)
+1. **Add New → Project** → import the repo, set **Root Directory** to `frontend` (Vite is auto-detected; [frontend/vercel.json](frontend/vercel.json) adds the SPA fallback for react-router).
+2. Add the environment variable `VITE_API_BASE_URL` = `https://<service>.onrender.com/api/v1` (it is baked in at build time, so redeploy after changing it).
+3. Deploy, then put the resulting Vercel URL into `CORS_ORIGINS` on Render if you haven't yet.
+
+### Local development against Postgres (optional)
+Copy `backend/.env.example` to `backend/.env`. Without `DATABASE_URL` the backend uses a local SQLite file. If you have an old `backend/physique.db` from before the migrations were reset, delete it and run `cd backend && alembic upgrade head`.
+
+---
+
 ## 🗄️ Database Schema
 
 ```sql

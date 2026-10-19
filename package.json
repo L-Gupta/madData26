@@ -1,8 +1,0 @@
-{
-    "name": "full-stack-app",
-    "version": "1.0.0",
-    "scripts": {
-        "build": "cd frontend && npm install && npm run build && cd .. && npm run copy-dist-vercel",
-        "copy-dist-vercel": "mkdir -p dist && cp -r frontend/dist/* dist/"
-    }
-}
