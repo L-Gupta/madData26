@@ -1,8 +1,18 @@
-"""Test the Gemini API using urllib (no pip packages needed)."""
+"""Test the Gemini API using urllib. Reads GEMINI_API_KEY from backend/.env."""
 import json
+import os
+import sys
 import urllib.request
+from pathlib import Path
 
-API_KEY = "AIzaSyCcFWQO7BfOKw-GEkjvkqKaSYkJWc715tI"
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parent / "backend" / ".env")
+
+API_KEY = os.environ.get("GEMINI_API_KEY")
+if not API_KEY:
+    sys.exit("GEMINI_API_KEY is not set. Add it to backend/.env (see backend/.env.example).")
+
 URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
 
 payload = json.dumps({"contents": [{"parts": [{"text": "Say HELLO_OK in one word"}]}]}).encode("utf-8")
